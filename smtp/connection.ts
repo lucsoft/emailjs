@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { Socket } from 'node:net';
+import { Buffer } from 'node:buffer';
 import { hostname } from 'node:os';
 import { connect, createSecureContext, TLSSocket } from 'node:tls';
 import type { ConnectionOptions } from 'node:tls';

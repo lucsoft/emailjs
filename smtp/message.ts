@@ -8,6 +8,7 @@ import {
 } from 'node:fs';
 import { hostname } from 'node:os';
 import { Stream } from 'node:stream';
+import { Buffer } from "node:buffer";
 import type { Readable } from 'node:stream';
 
 import { addressparser } from './address.ts';
@@ -34,7 +35,7 @@ export const BUFFERSIZE = (MIMECHUNK * 24 * 7) as 12768;
 export interface MessageAttachmentHeaders {
 	[ index: string ]: string | undefined;
 	'content-type'?: string;
-	'content-transfer-encoding'?: BufferEncoding | '7bit' | '8bit';
+	'content-transfer-encoding'?: Parameters<Buffer[ "fill" ]>[ 3 ] | '7bit' | '8bit';
 	'content-disposition'?: string;
 }
 
@@ -117,7 +118,7 @@ function convertDashDelimitedTextToSnakeCase(text: string) {
 export class Message {
 	public readonly attachments: MessageAttachment[] = [];
 	public readonly header: Partial<MessageHeaders> = {
-		'message-id': `<${new Date().getTime()}.${counter++}.${process.pid
+		'message-id': `<${new Date().getTime()}.${counter++}.${Deno.pid
 			}@${hostname()}>`,
 		date: getRFC2822Date(),
 	};
@@ -727,7 +728,7 @@ class MessageStream extends Stream {
 		};
 
 		this.once('destroy', close);
-		process.nextTick(outputHeader);
+		setTimeout(outputHeader, 0);
 	}
 
 	/**

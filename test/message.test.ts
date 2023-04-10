@@ -1,7 +1,8 @@
 import { createReadStream, readFileSync } from 'node:fs';
 
-import { simpleParser } from 'npm:mailparser';
-import type { AddressObject, ParsedMail } from 'npm:mailparser';
+// @deno-types="npm:@types/mailparser"
+import { simpleParser, ParsedMail, AddressObject } from 'npm:mailparser';
+// @deno-types="npm:@types/smtp-server"
 import { SMTPServer } from 'npm:smtp-server';
 
 import { SMTPClient, Message } from '../mod.ts';

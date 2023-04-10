@@ -1,6 +1,7 @@
 import { SMTPError, SMTPErrorStates } from './error.ts';
 import type { Socket } from 'node:net';
 import type { TLSSocket } from 'node:tls';
+import { Buffer } from "node:buffer";
 
 export class SMTPResponseMonitor {
 	public readonly stop: (err?: Error) => void;

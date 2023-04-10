@@ -1,5 +1,6 @@
-import { simpleParser } from 'npm:mailparser';
-import type { AddressObject } from 'npm:mailparser';
+// @deno-types="npm:@types/mailparser"
+import { simpleParser, AddressObject } from 'npm:mailparser';
+// @deno-types="npm:@types/smtp-server"
 import { SMTPServer } from 'npm:smtp-server';
 
 import { AUTH_METHODS, SMTPClient, Message } from '../mod.ts';
