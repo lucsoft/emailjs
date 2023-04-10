@@ -1,17 +1,15 @@
 // adapted from https://github.com/emailjs/emailjs-mime-codec/blob/6909c706b9f09bc0e5c3faf48f723cca53e5b352/src/mimecodec.js
-import { TextDecoder, TextEncoder } from 'util';
-
 const encoder = new TextEncoder();
 
 /**
  * @see https://tools.ietf.org/html/rfc2045#section-6.7
  */
 const RANGES = [
-	[0x09], // <TAB>
-	[0x0a], // <LF>
-	[0x0d], // <CR>
-	[0x20, 0x3c], // <SP>!"#$%&'()*+,-./0123456789:;
-	[0x3e, 0x7e], // >?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}
+	[ 0x09 ], // <TAB>
+	[ 0x0a ], // <LF>
+	[ 0x0d ], // <CR>
+	[ 0x20, 0x3c ], // <SP>!"#$%&'()*+,-./0123456789:;
+	[ 0x3e, 0x7e ], // >?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}
 ];
 const LOOKUP =
 	'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
@@ -21,10 +19,10 @@ const MAX_B64_MIME_WORD_BYTE_LENGTH = 39;
 
 function tripletToBase64(num: number) {
 	return (
-		LOOKUP[(num >> 18) & 0x3f] +
-		LOOKUP[(num >> 12) & 0x3f] +
-		LOOKUP[(num >> 6) & 0x3f] +
-		LOOKUP[num & 0x3f]
+		LOOKUP[ (num >> 18) & 0x3f ] +
+		LOOKUP[ (num >> 12) & 0x3f ] +
+		LOOKUP[ (num >> 6) & 0x3f ] +
+		LOOKUP[ num & 0x3f ]
 	);
 }
 
@@ -32,7 +30,7 @@ function encodeChunk(uint8: Uint8Array, start: number, end: number) {
 	let output = '';
 	for (let i = start; i < end; i += 3) {
 		output += tripletToBase64(
-			(uint8[i] << 16) + (uint8[i + 1] << 8) + uint8[i + 2]
+			(uint8[ i ] << 16) + (uint8[ i + 1 ] << 8) + uint8[ i + 2 ]
 		);
 	}
 	return output;
@@ -54,15 +52,15 @@ function encodeBase64(data: Uint8Array) {
 
 	// pad the end with zeros, but make sure to not forget the extra bytes
 	if (extraBytes === 1) {
-		const tmp = data[len - 1];
-		output += LOOKUP[tmp >> 2];
-		output += LOOKUP[(tmp << 4) & 0x3f];
+		const tmp = data[ len - 1 ];
+		output += LOOKUP[ tmp >> 2 ];
+		output += LOOKUP[ (tmp << 4) & 0x3f ];
 		output += '==';
 	} else if (extraBytes === 2) {
-		const tmp = (data[len - 2] << 8) + data[len - 1];
-		output += LOOKUP[tmp >> 10];
-		output += LOOKUP[(tmp >> 4) & 0x3f];
-		output += LOOKUP[(tmp << 2) & 0x3f];
+		const tmp = (data[ len - 2 ] << 8) + data[ len - 1 ];
+		output += LOOKUP[ tmp >> 10 ];
+		output += LOOKUP[ (tmp >> 4) & 0x3f ];
+		output += LOOKUP[ (tmp << 2) & 0x3f ];
 		output += '=';
 	}
 
@@ -95,7 +93,7 @@ function splitMimeEncodedString(str: string, maxlen = 12) {
 			done = true;
 			const match = str.substr(curLine.length).match(/^=([0-9A-F]{2})/i); // check if not middle of a unicode char sequence
 			if (match) {
-				chr = parseInt(match[1], 16);
+				chr = parseInt(match[ 1 ], 16);
 				// invalid sequence, move one char back anc recheck
 				if (chr < 0xc2 && chr > 0x7f) {
 					curLine = curLine.substr(0, curLine.length - 3);
@@ -122,8 +120,8 @@ function checkRanges(nr: number) {
 	return RANGES.reduce(
 		(val, range) =>
 			val ||
-			(range.length === 1 && nr === range[0]) ||
-			(range.length === 2 && nr >= range[0] && nr <= range[1]),
+			(range.length === 1 && nr === range[ 0 ]) ||
+			(range.length === 2 && nr >= range[ 0 ] && nr <= range[ 1 ]),
 		false
 	);
 }
@@ -153,17 +151,17 @@ export function mimeEncode(data: string | Uint8Array = '', encoding = 'utf-8') {
 	return buffer.reduce(
 		(aggregate, ord, index) =>
 			checkRanges(ord) &&
-			!(
-				(ord === 0x20 || ord === 0x09) &&
-				(index === buffer.length - 1 ||
-					buffer[index + 1] === 0x0a ||
-					buffer[index + 1] === 0x0d)
-			)
+				!(
+					(ord === 0x20 || ord === 0x09) &&
+					(index === buffer.length - 1 ||
+						buffer[ index + 1 ] === 0x0a ||
+						buffer[ index + 1 ] === 0x0d)
+				)
 				? // if the char is in allowed range, then keep as is, unless it is a ws in the end of a line
-				  aggregate + String.fromCharCode(ord)
+				aggregate + String.fromCharCode(ord)
 				: `${aggregate}=${ord < 0x10 ? '0' : ''}${ord
-						.toString(16)
-						.toUpperCase()}`,
+					.toString(16)
+					.toUpperCase()}`,
 		''
 	);
 }
@@ -199,12 +197,12 @@ export function mimeWordEncode(
 				chr === ' '
 					? '_'
 					: '=' +
-					  (chr.charCodeAt(0) < 0x10 ? '0' : '') +
-					  chr.charCodeAt(0).toString(16).toUpperCase()
+					(chr.charCodeAt(0) < 0x10 ? '0' : '') +
+					chr.charCodeAt(0).toString(16).toUpperCase()
 		);
 		parts =
 			encodedStr.length < MAX_MIME_WORD_LENGTH
-				? [encodedStr]
+				? [ encodedStr ]
 				: splitMimeEncodedString(encodedStr, MAX_MIME_WORD_LENGTH);
 	} else {
 		// Fits as much as possible into every line without breaking utf-8 multibyte characters' octets up across lines

@@ -1,8 +1,8 @@
-import { addressparser } from './address.js';
-import type { MessageAttachment, MessageHeaders } from './message.js';
-import { Message } from './message.js';
-import type { SMTPConnectionOptions } from './connection.js';
-import { SMTPConnection, SMTPState } from './connection.js';
+import { addressparser } from './address.ts';
+import type { MessageAttachment, MessageHeaders } from './message.ts';
+import { Message } from './message.ts';
+import type { SMTPConnectionOptions } from './connection.ts';
+import { SMTPConnection, SMTPState } from './connection.ts';
 
 export type MessageCallback<T = Message | MessageHeaders> = <
 	U extends Error | null,
@@ -30,7 +30,7 @@ export class SMTPClient {
 
 	protected sending = false;
 	protected ready = false;
-	protected timer: NodeJS.Timer | null = null;
+	protected timer: number | null = null;
 
 	/**
 	 * Create a standard SMTP client backed by a self-managed SMTP connection.
@@ -58,8 +58,8 @@ export class SMTPClient {
 			msg instanceof Message
 				? msg
 				: this._canMakeMessage(msg)
-				? new Message(msg)
-				: null;
+					? new Message(msg)
+					: null;
 
 		if (message == null) {
 			callback(new Error('message is not a valid Message instance'), msg);
@@ -113,7 +113,7 @@ export class SMTPClient {
 			/* ø */
 		}
 	) {
-		const [{ address: from }] = addressparser(message.header.from);
+		const [ { address: from } ] = addressparser(message.header.from);
 		const stack = {
 			message,
 			to: [] as ReturnType<typeof addressparser>,
@@ -148,7 +148,7 @@ export class SMTPClient {
 		if (typeof returnPath === 'string' && returnPath.length > 0) {
 			const parsedReturnPath = addressparser(returnPath);
 			if (parsedReturnPath.length > 0) {
-				const [{ address: returnPathAddress }] = parsedReturnPath;
+				const [ { address: returnPathAddress } ] = parsedReturnPath;
 				stack.returnPath = returnPathAddress as string;
 			}
 		}
@@ -167,7 +167,7 @@ export class SMTPClient {
 
 		if (this.queue.length) {
 			if (this.smtp.state() == SMTPState.NOTCONNECTED) {
-				this._connect(this.queue[0]);
+				this._connect(this.queue[ 0 ]);
 			} else if (
 				this.smtp.state() == SMTPState.CONNECTED &&
 				!this.sending &&
@@ -282,7 +282,7 @@ export class SMTPClient {
 		 */
 		return (err: Error) => {
 			if (!err && next) {
-				next.apply(this, [stack]);
+				next.apply(this, [ stack ]);
 			} else {
 				// if we snag on SMTP commands, call done, passing the error
 				// but first reset SMTP state so queue can continue polling

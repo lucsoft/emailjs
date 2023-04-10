@@ -1,18 +1,18 @@
-import type { PathLike } from 'fs';
+import type { PathLike } from 'node:fs';
 import {
 	existsSync,
 	open as openFile,
 	close as closeFile,
 	closeSync as closeFileSync,
 	read as readFile,
-} from 'fs';
-import { hostname } from 'os';
-import { Stream } from 'stream';
-import type { Readable } from 'stream';
+} from 'node:fs';
+import { hostname } from 'node:os';
+import { Stream } from 'node:stream';
+import type { Readable } from 'node:stream';
 
-import { addressparser } from './address.js';
-import { getRFC2822Date } from './date.js';
-import { mimeWordEncode } from './mime.js';
+import { addressparser } from './address.ts';
+import { getRFC2822Date } from './date.ts';
+import { mimeWordEncode } from './mime.ts';
 
 const CRLF = '\r\n' as const;
 
@@ -32,22 +32,22 @@ export const MIME64CHUNK = (MIMECHUNK * 6) as 456;
 export const BUFFERSIZE = (MIMECHUNK * 24 * 7) as 12768;
 
 export interface MessageAttachmentHeaders {
-	[index: string]: string | undefined;
+	[ index: string ]: string | undefined;
 	'content-type'?: string;
 	'content-transfer-encoding'?: BufferEncoding | '7bit' | '8bit';
 	'content-disposition'?: string;
 }
 
 export interface MessageAttachment {
-	[index: string]:
-		| string
-		| boolean
-		| MessageAttachment
-		| MessageAttachment[]
-		| MessageAttachmentHeaders
-		| Readable
-		| PathLike
-		| undefined;
+	[ index: string ]:
+	| string
+	| boolean
+	| MessageAttachment
+	| MessageAttachment[]
+	| MessageAttachmentHeaders
+	| Readable
+	| PathLike
+	| undefined;
 	name?: string;
 	headers?: MessageAttachmentHeaders;
 	inline?: boolean;
@@ -63,14 +63,14 @@ export interface MessageAttachment {
 }
 
 export interface MessageHeaders {
-	[index: string]:
-		| boolean
-		| string
-		| string[]
-		| null
-		| undefined
-		| MessageAttachment
-		| MessageAttachment[];
+	[ index: string ]:
+	| boolean
+	| string
+	| string[]
+	| null
+	| undefined
+	| MessageAttachment
+	| MessageAttachment[];
 	'content-type'?: string;
 	'message-id'?: string;
 	'return-path'?: string | null;
@@ -117,9 +117,8 @@ function convertDashDelimitedTextToSnakeCase(text: string) {
 export class Message {
 	public readonly attachments: MessageAttachment[] = [];
 	public readonly header: Partial<MessageHeaders> = {
-		'message-id': `<${new Date().getTime()}.${counter++}.${
-			process.pid
-		}@${hostname()}>`,
+		'message-id': `<${new Date().getTime()}.${counter++}.${process.pid
+			}@${hostname()}>`,
 		date: getRFC2822Date(),
 	};
 	public readonly content: string = 'text/plain; charset=utf-8';
@@ -141,17 +140,17 @@ export class Message {
 		for (const header in headers) {
 			// allow user to override default content-type to override charset or send a single non-text message
 			if (/^content-type$/i.test(header)) {
-				this.content = headers[header] as string;
+				this.content = headers[ header ] as string;
 			} else if (header === 'text') {
-				this.text = headers[header] as string;
+				this.text = headers[ header ] as string;
 			} else if (
 				header === 'attachment' &&
-				typeof headers[header] === 'object'
+				typeof headers[ header ] === 'object'
 			) {
-				const attachment = headers[header];
+				const attachment = headers[ header ];
 				if (Array.isArray(attachment)) {
 					for (let i = 0; i < attachment.length; i++) {
-						this.attach(attachment[i]);
+						this.attach(attachment[ i ]);
 					}
 				} else if (attachment != null) {
 					this.attach(attachment);
@@ -159,12 +158,12 @@ export class Message {
 			} else if (header === 'subject') {
 				this.header.subject = mimeWordEncode(headers.subject as string);
 			} else if (/^(cc|bcc|to|from)/i.test(header)) {
-				this.header[header.toLowerCase()] = convertPersonToAddress(
-					headers[header] as string | string[]
+				this.header[ header.toLowerCase() ] = convertPersonToAddress(
+					headers[ header ] as string | string[]
 				);
 			} else {
 				// allow any headers the user wants to set??
-				this.header[header.toLowerCase()] = headers[header];
+				this.header[ header.toLowerCase() ] = headers[ header ];
 			}
 		}
 	}
@@ -373,14 +372,14 @@ class MessageStream extends Stream {
 				'content-disposition': attachment.inline
 					? 'inline'
 					: `attachment; filename="${mimeWordEncode(
-							attachment.name as string
-					  )}"`,
+						attachment.name as string
+					)}"`,
 			};
 
 			// allow sender to override default headers
 			if (attachment.headers != null) {
 				for (const header in attachment.headers) {
-					headers[header.toLowerCase()] = attachment.headers[header];
+					headers[ header.toLowerCase() ] = attachment.headers[ header ];
 				}
 			}
 
@@ -388,12 +387,12 @@ class MessageStream extends Stream {
 				data = data.concat([
 					convertDashDelimitedTextToSnakeCase(header),
 					': ',
-					headers[header] as string,
+					headers[ header ] as string,
 					CRLF,
 				]);
 			}
 
-			output(data.concat([CRLF]).join(''));
+			output(data.concat([ CRLF ]).join(''));
 		};
 
 		/**
@@ -421,13 +420,13 @@ class MessageStream extends Stream {
 			const buffer = Buffer.alloc(chunk);
 
 			const inputEncoding =
-				attachment?.headers?.['content-transfer-encoding'] || 'base64';
+				attachment?.headers?.[ 'content-transfer-encoding' ] || 'base64';
 			const encoding =
 				inputEncoding === '7bit'
 					? 'ascii'
 					: inputEncoding === '8bit'
-					? 'binary'
-					: inputEncoding;
+						? 'binary'
+						: inputEncoding;
 
 			/**
 			 * @param {Error} err the error to emit
@@ -496,7 +495,7 @@ class MessageStream extends Stream {
 					let buffer = Buffer.isBuffer(buff) ? buff : Buffer.from(buff);
 
 					if (previous.byteLength > 0) {
-						buffer = Buffer.concat([previous, buffer]);
+						buffer = Buffer.concat([ previous, buffer ]);
 					}
 
 					const padded = buffer.length % MIME64CHUNK;
@@ -525,8 +524,8 @@ class MessageStream extends Stream {
 			const build = attachment.path
 				? outputFile
 				: attachment.stream
-				? outputStream
-				: outputData;
+					? outputStream
+					: outputData;
 			outputAttachmentHeaders(attachment);
 			build(attachment, callback);
 		};
@@ -546,12 +545,12 @@ class MessageStream extends Stream {
 		) => {
 			if (index < list.length) {
 				output(`--${boundary}${CRLF}`);
-				if (list[index].related) {
-					outputRelated(list[index], () =>
+				if (list[ index ].related) {
+					outputRelated(list[ index ], () =>
 						outputMessage(boundary, list, index + 1, callback)
 					);
 				} else {
-					outputAttachment(list[index], () =>
+					outputAttachment(list[ index ], () =>
 						outputMessage(boundary, list, index + 1, callback)
 					);
 				}
@@ -573,7 +572,7 @@ class MessageStream extends Stream {
 			} else {
 				outputAlternative(
 					// typescript bug; should narrow to { alternative: MessageAttachment }
-					this.message as Parameters<typeof outputAlternative>[0],
+					this.message as Parameters<typeof outputAlternative>[ 0 ],
 					() => outputMessage(boundary, this.message.attachments, 0, close)
 				);
 			}
@@ -610,8 +609,8 @@ class MessageStream extends Stream {
 				'Content-Transfer-Encoding: 7bit',
 				CRLF,
 			]);
-			data = data.concat(['Content-Disposition: inline', CRLF, CRLF]);
-			data = data.concat([message.text || '', CRLF, CRLF]);
+			data = data.concat([ 'Content-Disposition: inline', CRLF, CRLF ]);
+			data = data.concat([ message.text || '', CRLF, CRLF ]);
 
 			output(data.join(''));
 		};
@@ -643,7 +642,7 @@ class MessageStream extends Stream {
 		 * @returns {void}
 		 */
 		const outputAlternative = (
-			message: Message & { alternative: MessageAttachment },
+			message: Message & { alternative: MessageAttachment; },
 			callback: () => void
 		) => {
 			const boundary = generateBoundary();
@@ -657,7 +656,7 @@ class MessageStream extends Stream {
 			 * @returns {void}
 			 */
 			const finish = () => {
-				output([CRLF, '--', boundary, '--', CRLF, CRLF].join(''));
+				output([ CRLF, '--', boundary, '--', CRLF, CRLF ].join(''));
 				callback();
 			};
 
@@ -717,7 +716,7 @@ class MessageStream extends Stream {
 					data = data.concat([
 						convertDashDelimitedTextToSnakeCase(header),
 						': ',
-						this.message.header[header] as string,
+						this.message.header[ header ] as string,
 						CRLF,
 					]);
 				}

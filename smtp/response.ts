@@ -1,6 +1,6 @@
-import { SMTPError, SMTPErrorStates } from './error.js';
-import type { Socket } from 'net';
-import type { TLSSocket } from 'tls';
+import { SMTPError, SMTPErrorStates } from './error.ts';
+import type { Socket } from 'node:net';
+import type { TLSSocket } from 'node:tls';
 
 export class SMTPResponseMonitor {
 	public readonly stop: (err?: Error) => void;
@@ -31,7 +31,7 @@ export class SMTPResponseMonitor {
 				const match = line ? line.match(/(\d+)\s?(.*)/) : null;
 				const data =
 					match !== null
-						? { code: match[1], message: match[2], data: line }
+						? { code: match[ 1 ], message: match[ 2 ], data: line }
 						: { code: -1, data: line };
 
 				stream.emit('response', null, data);

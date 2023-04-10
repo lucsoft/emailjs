@@ -1,12 +1,12 @@
-import { createHmac } from 'crypto';
-import { EventEmitter } from 'events';
-import { Socket } from 'net';
-import { hostname } from 'os';
-import { connect, createSecureContext, TLSSocket } from 'tls';
-import type { ConnectionOptions } from 'tls';
+import { createHmac } from 'node:crypto';
+import { EventEmitter } from 'node:events';
+import { Socket } from 'node:net';
+import { hostname } from 'node:os';
+import { connect, createSecureContext, TLSSocket } from 'node:tls';
+import type { ConnectionOptions } from 'node:tls';
 
-import { SMTPError, SMTPErrorStates } from './error.js';
-import { SMTPResponseMonitor } from './response.js';
+import { SMTPError, SMTPErrorStates } from './error.ts';
+import { SMTPResponseMonitor } from './response.ts';
 
 /**
  * @readonly
@@ -97,7 +97,7 @@ export class SMTPConnection extends EventEmitter {
 
 	protected readonly log = log;
 	protected readonly authentication: (keyof typeof AUTH_METHODS)[] = [
-		AUTH_METHODS['CRAM-MD5'],
+		AUTH_METHODS[ 'CRAM-MD5' ],
 		AUTH_METHODS.LOGIN,
 		AUTH_METHODS.PLAIN,
 		AUTH_METHODS.XOAUTH2,
@@ -108,7 +108,7 @@ export class SMTPConnection extends EventEmitter {
 	protected loggedin = false;
 
 	protected sock: Socket | TLSSocket | null = null;
-	protected features: { [index: string]: string | boolean } | null = null;
+	protected features: { [ index: string ]: string | boolean; } | null = null;
 	protected monitor: SMTPResponseMonitor | null = null;
 	protected domain = hostname();
 	protected host = 'localhost';
@@ -288,7 +288,7 @@ export class SMTPConnection extends EventEmitter {
 
 		const response = (
 			err: Error | null | undefined,
-			msg: { code: string | number; data: string }
+			msg: { code: string | number; data: string; }
 		) => {
 			if (err) {
 				if (this._state === SMTPState.NOTCONNECTED && !this.sock) {
@@ -383,17 +383,17 @@ export class SMTPConnection extends EventEmitter {
 	public command(
 		cmd: string,
 		callback: (...rest: any[]) => void,
-		codes: number[] | number = [250]
+		codes: number[] | number = [ 250 ]
 	) {
 		const codesArray = Array.isArray(codes)
 			? codes
 			: typeof codes === 'number'
-			? [codes]
-			: [250];
+				? [ codes ]
+				: [ 250 ];
 
 		const response = (
 			err: Error | null | undefined,
-			msg: { code: string | number; data: string; message: string }
+			msg: { code: string | number; data: string; message: string; }
 		) => {
 			if (err) {
 				caller(callback, err);
@@ -412,9 +412,8 @@ export class SMTPConnection extends EventEmitter {
 					}, GREYLIST_DELAY);
 				} else {
 					const suffix = msg.message ? `: ${msg.message}` : '';
-					const errorMessage = `bad response on command '${
-						cmd.split(' ')[0]
-					}'${suffix}`;
+					const errorMessage = `bad response on command '${cmd.split(' ')[ 0 ]
+						}'${suffix}`;
 					caller(
 						callback,
 						SMTPError.create(
@@ -463,7 +462,7 @@ export class SMTPConnection extends EventEmitter {
 	 * @returns {void}
 	 */
 	public starttls(callback: (...rest: any[]) => void) {
-		const response = (err: Error, msg: { data: unknown }) => {
+		const response = (err: Error, msg: { data: unknown; }) => {
 			if (this.sock == null) {
 				throw new Error('null socket');
 			}
@@ -492,7 +491,7 @@ export class SMTPConnection extends EventEmitter {
 			}
 		};
 
-		this.command('starttls', response, [220]);
+		this.command('starttls', response, [ 220 ]);
 	}
 
 	/**
@@ -520,7 +519,7 @@ export class SMTPConnection extends EventEmitter {
 				// It's actually stricter, in that only spaces are allowed between
 				// parameters, but were not going to check for that here.  Note
 				// that the space isn't present if there are no parameters.
-				this.features[parse[1].toLowerCase()] = parse[2] || true;
+				this.features[ parse[ 1 ].toLowerCase() ] = parse[ 2 ] || true;
 			}
 		});
 	}
@@ -554,7 +553,7 @@ export class SMTPConnection extends EventEmitter {
 	 * @returns {boolean} whether the extension exists
 	 */
 	public has_extn(opt: string) {
-		return (this.features ?? {})[opt.toLowerCase()] === undefined;
+		return (this.features ?? {})[ opt.toLowerCase() ] === undefined;
 	}
 
 	/**
@@ -565,7 +564,7 @@ export class SMTPConnection extends EventEmitter {
 	 * @returns {void}
 	 */
 	public help(callback: (...rest: any[]) => void, domain: string) {
-		this.command(domain ? `help ${domain}` : 'help', callback, [211, 214]);
+		this.command(domain ? `help ${domain}` : 'help', callback, [ 211, 214 ]);
 	}
 
 	/**
@@ -603,7 +602,7 @@ export class SMTPConnection extends EventEmitter {
 	 * @returns {void}
 	 */
 	public rcpt(callback: (...rest: any[]) => void, to: string) {
-		this.command(`RCPT TO:${to}`, callback, [250, 251]);
+		this.command(`RCPT TO:${to}`, callback, [ 250, 251 ]);
 	}
 
 	/**
@@ -612,7 +611,7 @@ export class SMTPConnection extends EventEmitter {
 	 * @returns {void}
 	 */
 	public data(callback: (...rest: any[]) => void) {
-		this.command('data', callback, [354]);
+		this.command('data', callback, [ 354 ]);
 	}
 
 	/**
@@ -642,7 +641,7 @@ export class SMTPConnection extends EventEmitter {
 	 * @returns {void}
 	 */
 	public verify(address: string, callback: (...rest: any[]) => void) {
-		this.command(`vrfy ${address}`, callback, [250, 251, 252]);
+		this.command(`vrfy ${address}`, callback, [ 250, 251, 252 ]);
 	}
 
 	/**
@@ -705,7 +704,7 @@ export class SMTPConnection extends EventEmitter {
 		callback: (...rest: any[]) => void,
 		user?: string,
 		password?: string,
-		options: { method?: string; domain?: string } = {}
+		options: { method?: string; domain?: string; } = {}
 	) {
 		const login = {
 			user: user ? () => user : this.user,
@@ -758,13 +757,13 @@ export class SMTPConnection extends EventEmitter {
 				const preferred = this.authentication;
 				let auth = '';
 
-				if (typeof this.features?.['auth'] === 'string') {
-					auth = this.features['auth'];
+				if (typeof this.features?.[ 'auth' ] === 'string') {
+					auth = this.features[ 'auth' ];
 				}
 
 				for (let i = 0; i < preferred.length; i++) {
-					if (auth.includes(preferred[i])) {
-						method = preferred[i];
+					if (auth.includes(preferred[ i ])) {
+						method = preferred[ i ];
 						break;
 					}
 				}
@@ -818,13 +817,13 @@ export class SMTPConnection extends EventEmitter {
 				if (err) {
 					failed(err, data);
 				} else {
-					if (method === AUTH_METHODS['CRAM-MD5']) {
-						this.command(encodeCramMd5(msg), response, [235, 503]);
+					if (method === AUTH_METHODS[ 'CRAM-MD5' ]) {
+						this.command(encodeCramMd5(msg), response, [ 235, 503 ]);
 					} else if (method === AUTH_METHODS.LOGIN) {
 						this.command(
 							Buffer.from(login.password()).toString('base64'),
 							response,
-							[235, 503]
+							[ 235, 503 ]
 						);
 					}
 				}
@@ -844,31 +843,31 @@ export class SMTPConnection extends EventEmitter {
 						this.command(
 							Buffer.from(login.user()).toString('base64'),
 							attempt,
-							[334]
+							[ 334 ]
 						);
 					}
 				}
 			};
 
 			switch (method) {
-				case AUTH_METHODS['CRAM-MD5']:
-					this.command(`AUTH  ${AUTH_METHODS['CRAM-MD5']}`, attempt, [334]);
+				case AUTH_METHODS[ 'CRAM-MD5' ]:
+					this.command(`AUTH  ${AUTH_METHODS[ 'CRAM-MD5' ]}`, attempt, [ 334 ]);
 					break;
 				case AUTH_METHODS.LOGIN:
-					this.command(`AUTH ${AUTH_METHODS.LOGIN}`, attemptUser, [334]);
+					this.command(`AUTH ${AUTH_METHODS.LOGIN}`, attemptUser, [ 334 ]);
 					break;
 				case AUTH_METHODS.PLAIN:
 					this.command(
 						`AUTH ${AUTH_METHODS.PLAIN} ${encodePlain()}`,
 						response,
-						[235, 503]
+						[ 235, 503 ]
 					);
 					break;
 				case AUTH_METHODS.XOAUTH2:
 					this.command(
 						`AUTH ${AUTH_METHODS.XOAUTH2} ${encodeXoauth2()}`,
 						response,
-						[235, 503]
+						[ 235, 503 ]
 					);
 					break;
 				default:
@@ -928,7 +927,7 @@ export class SMTPConnection extends EventEmitter {
 				caller(callback, err, data);
 				this.close();
 			},
-			[221, 250]
+			[ 221, 250 ]
 		);
 	}
 }

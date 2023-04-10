@@ -1,11 +1,10 @@
-import test from 'ava';
 
-import { SMTPConnection } from '../email.js';
+import { SMTPConnection } from '../mod.ts';
 
-test('accepts a custom logger', async (t) => {
+Deno.test('accepts a custom logger', () => {
 	const logger = () => {
 		/** ø */
 	};
 	const connection = new SMTPConnection({ logger });
-	t.is(Reflect.get(connection, 'log'), logger);
+	assertEquals(Reflect.get(connection, 'log'), logger);
 });
