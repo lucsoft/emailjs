@@ -1,50 +1,51 @@
+import { assertEquals } from "https://deno.land/std@0.182.0/testing/asserts.ts";
 import { addressparser } from '../mod.ts';
 
 Deno.test('addressparser should handle single address correctly', () => {
-	t.deepEqual(addressparser('andris@tr.ee'), [
+	assertEquals(addressparser('andris@tr.ee'), [
 		{ address: 'andris@tr.ee', name: '' },
 	]);
 });
 
 Deno.test('addressparser should handle multiple addresses correctly', () => {
-	t.deepEqual(addressparser('andris@tr.ee, andris@example.com'), [
+	assertEquals(addressparser('andris@tr.ee, andris@example.com'), [
 		{ address: 'andris@tr.ee', name: '' },
 		{ address: 'andris@example.com', name: '' },
 	]);
 });
 
 Deno.test('addressparser should handle unquoted name correctly', () => {
-	t.deepEqual(addressparser('andris <andris@tr.ee>'), [
+	assertEquals(addressparser('andris <andris@tr.ee>'), [
 		{ name: 'andris', address: 'andris@tr.ee' },
 	]);
 });
 
 Deno.test('addressparser should handle quoted name correctly', () => {
-	t.deepEqual(addressparser('"reinman, andris" <andris@tr.ee>'), [
+	assertEquals(addressparser('"reinman, andris" <andris@tr.ee>'), [
 		{ name: 'reinman, andris', address: 'andris@tr.ee' },
 	]);
 });
 
 Deno.test('addressparser should handle quoted semicolons correctly', () => {
-	t.deepEqual(addressparser('"reinman; andris" <andris@tr.ee>'), [
+	assertEquals(addressparser('"reinman; andris" <andris@tr.ee>'), [
 		{ name: 'reinman; andris', address: 'andris@tr.ee' },
 	]);
 });
 
 Deno.test('addressparser should handle unquoted name, unquoted address correctly', () => {
-	t.deepEqual(addressparser('andris andris@tr.ee'), [
+	assertEquals(addressparser('andris andris@tr.ee'), [
 		{ name: 'andris', address: 'andris@tr.ee' },
 	]);
 });
 
 Deno.test('addressparser should handle empty group correctly', () => {
-	t.deepEqual(addressparser('Undisclosed:;'), [
+	assertEquals(addressparser('Undisclosed:;'), [
 		{ name: 'Undisclosed', group: [] },
 	]);
 });
 
 Deno.test('addressparser should handle address group correctly', () => {
-	t.deepEqual(addressparser('Disclosed:andris@tr.ee, andris@example.com;'), [
+	assertEquals(addressparser('Disclosed:andris@tr.ee, andris@example.com;'), [
 		{
 			name: 'Disclosed',
 			group: [
@@ -56,14 +57,14 @@ Deno.test('addressparser should handle address group correctly', () => {
 });
 
 Deno.test('addressparser should handle semicolon as a delimiter', () => {
-	t.deepEqual(addressparser('andris@tr.ee; andris@example.com;'), [
+	assertEquals(addressparser('andris@tr.ee; andris@example.com;'), [
 		{ address: 'andris@tr.ee', name: '' },
 		{ address: 'andris@example.com', name: '' },
 	]);
 });
 
 Deno.test('addressparser should handle mixed group correctly', () => {
-	t.deepEqual(
+	assertEquals(
 		addressparser(
 			'Test User <test.user@mail.ee>, Disclosed:andris@tr.ee, andris@example.com;,,,, Undisclosed:;'
 		),
@@ -82,7 +83,7 @@ Deno.test('addressparser should handle mixed group correctly', () => {
 });
 
 Deno.test('addressparser semicolon as delimiter should not break group parsing ', () => {
-	t.deepEqual(
+	assertEquals(
 		addressparser(
 			'Test User <test.user@mail.ee>; Disclosed:andris@tr.ee, andris@example.com;,,,, Undisclosed:; bob@example.com;'
 		),
@@ -108,27 +109,27 @@ Deno.test('addressparser semicolon as delimiter should not break group parsing '
 });
 
 Deno.test('addressparser should handle name from comment correctly', () => {
-	t.deepEqual(addressparser('andris@tr.ee (andris)'), [
+	assertEquals(addressparser('andris@tr.ee (andris)'), [
 		{ name: 'andris', address: 'andris@tr.ee' },
 	]);
 });
 
 Deno.test('addressparser should handle skip comment correctly', () => {
-	t.deepEqual(addressparser('andris@tr.ee (reinman) andris'), [
+	assertEquals(addressparser('andris@tr.ee (reinman) andris'), [
 		{ name: 'andris', address: 'andris@tr.ee' },
 	]);
 });
 
 Deno.test('addressparser should handle missing address correctly', () => {
-	t.deepEqual(addressparser('andris'), [ { name: 'andris', address: '' } ]);
+	assertEquals(addressparser('andris'), [ { name: 'andris', address: '' } ]);
 });
 
 Deno.test('addressparser should handle apostrophe in name correctly', () => {
-	t.deepEqual(addressparser("O'Neill"), [ { name: "O'Neill", address: '' } ]);
+	assertEquals(addressparser("O'Neill"), [ { name: "O'Neill", address: '' } ]);
 });
 
 Deno.test('addressparser should handle particularly bad input, unescaped colon correctly', () => {
-	t.deepEqual(
+	assertEquals(
 		addressparser(
 			'FirstName Surname-WithADash :: Company <firstname@company.com>'
 		),

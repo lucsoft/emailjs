@@ -1,14 +1,13 @@
-import type { ExecutionContext } from 'ava';
-import { simpleParser } from 'mailparser';
-import type { AddressObject } from 'mailparser';
-import { SMTPServer } from 'smtp-server';
+import { simpleParser } from 'npm:mailparser';
+import type { AddressObject } from 'npm:mailparser';
+import { SMTPServer } from 'npm:smtp-server';
 
 import { AUTH_METHODS, SMTPClient, Message } from '../mod.ts';
+import { assertEquals } from "https://deno.land/std@0.182.0/testing/asserts.ts";
 
 let port = 2000;
 
 function send(
-	t: ExecutionContext,
 	{
 		authMethods = [],
 		authOptional = false,
@@ -20,7 +19,6 @@ function send(
 	} = {}
 ) {
 	return new Promise<void>((resolve, reject) => {
-		t.plan(5);
 
 		const msg = {
 			subject: 'this is a test TEXT message from emailjs',
@@ -82,40 +80,34 @@ function send(
 	});
 }
 
-Deno.test('no authentication (unencrypted) should succeed', () => {
-	await t.notThrowsAsync(send(t, { authOptional: true }));
+Deno.test('no authentication (unencrypted) should succeed', async () => {
+	await send({ authOptional: true });
 });
 
-Deno.test('no authentication (encrypted) should succeed', () => {
-	await t.notThrowsAsync(send(t, { authOptional: true, secure: true }));
+Deno.test('no authentication (encrypted) should succeed', async () => {
+	await send({ authOptional: true, secure: true });
 });
 
-Deno.test('PLAIN authentication (unencrypted) should succeed', () => {
-	await t.notThrowsAsync(send(t, { authMethods: [ AUTH_METHODS.PLAIN ] }));
+Deno.test('PLAIN authentication (unencrypted) should succeed', async () => {
+	await send({ authMethods: [ AUTH_METHODS.PLAIN ] });
 });
 
-Deno.test('PLAIN authentication (encrypted) should succeed', () => {
-	await t.notThrowsAsync(
-		send(t, { authMethods: [ AUTH_METHODS.PLAIN ], secure: true })
-	);
+Deno.test('PLAIN authentication (encrypted) should succeed', async () => {
+	await send({ authMethods: [ AUTH_METHODS.PLAIN ], secure: true });
 });
 
-Deno.test('LOGIN authentication (unencrypted) should succeed', () => {
-	await t.notThrowsAsync(send(t, { authMethods: [ AUTH_METHODS.LOGIN ] }));
+Deno.test('LOGIN authentication (unencrypted) should succeed', async () => {
+	await send({ authMethods: [ AUTH_METHODS.LOGIN ] });
 });
 
-Deno.test('LOGIN authentication (encrypted) should succeed', () => {
-	await t.notThrowsAsync(
-		send(t, { authMethods: [ AUTH_METHODS.LOGIN ], secure: true })
-	);
+Deno.test('LOGIN authentication (encrypted) should succeed', async () => {
+	await send({ authMethods: [ AUTH_METHODS.LOGIN ], secure: true });
 });
 
-Deno.test('XOAUTH2 authentication (unencrypted) should succeed', () => {
-	await t.notThrowsAsync(send(t, { authMethods: [ AUTH_METHODS.XOAUTH2 ] }));
+Deno.test('XOAUTH2 authentication (unencrypted) should succeed', async () => {
+	await send({ authMethods: [ AUTH_METHODS.XOAUTH2 ] });
 });
 
-Deno.test('XOAUTH2 authentication (encrypted) should succeed', () => {
-	await t.notThrowsAsync(
-		send(t, { authMethods: [ AUTH_METHODS.XOAUTH2 ], secure: true })
-	);
+Deno.test('XOAUTH2 authentication (encrypted) should succeed', async () => {
+	await send({ authMethods: [ AUTH_METHODS.XOAUTH2 ], secure: true });
 });

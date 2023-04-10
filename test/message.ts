@@ -1,12 +1,13 @@
-import { createReadStream, readFileSync } from 'fs';
-import { URL } from 'url';
+import { createReadStream, readFileSync } from 'node:fs';
 
-import { simpleParser } from 'mailparser';
-import type { AddressObject, ParsedMail } from 'mailparser';
-import { SMTPServer } from 'smtp-server';
+import { simpleParser } from 'npm:mailparser';
+import type { AddressObject, ParsedMail } from 'npm:mailparser';
+import { SMTPServer } from 'npm:smtp-server';
 
 import { SMTPClient, Message } from '../mod.ts';
 import type { MessageAttachment, MessageHeaders } from '../mod.ts';
+import { assert, assertEquals, assertFalse } from "https://deno.land/std@0.182.0/testing/asserts.ts";
+import { afterAll, beforeAll, describe, it } from "https://deno.land/std@0.182.0/testing/bdd.ts";
 
 const textFixtureUrl = new URL('attachments/smtp.txt', import.meta.url);
 const textFixture = readFileSync(textFixtureUrl, 'utf-8');
@@ -70,385 +71,387 @@ function send(headers: Partial<MessageHeaders>) {
 		});
 	});
 }
+describe("Message", () => {
+	beforeAll(() => {
+		server.listen(port);
+	});
+	afterAll(() => {
+		server.close();
+	});
 
-test.before(() => {
-	server.listen(port, t.pass);
-});
-test.after(() => {
-	server.close(t.pass);
-});
 
-Deno.test('simple text message', () => {
-	const msg = {
-		subject: 'this is a test TEXT message from emailjs',
-		from: 'zelda@gmail.com',
-		to: 'gannon@gmail.com',
-		cc: 'gannon@gmail.com',
-		bcc: 'gannon@gmail.com',
-		text: 'hello friend, i hope this message finds you well.',
-		'message-id': 'this is a special id',
-	};
+	it('simple text message', async () => {
+		const msg = {
+			subject: 'this is a test TEXT message from emailjs',
+			from: 'zelda@gmail.com',
+			to: 'gannon@gmail.com',
+			cc: 'gannon@gmail.com',
+			bcc: 'gannon@gmail.com',
+			text: 'hello friend, i hope this message finds you well.',
+			'message-id': 'this is a special id',
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.text, msg.text + '\n\n\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-	assertEquals(mail.messageId, '<' + msg[ 'message-id' ] + '>');
-});
+		const mail = await send(msg);
+		assertEquals(mail.text, msg.text + '\n\n\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+		assertEquals(mail.messageId, '<' + msg[ 'message-id' ] + '>');
+	});
 
-Deno.test('null text message', () => {
-	const msg = {
-		subject: 'this is a test TEXT message from emailjs',
-		from: 'zelda@gmail.com',
-		to: 'gannon@gmail.com',
-		text: null,
-		'message-id': 'this is a special id',
-	};
+	it('null text message', async () => {
+		const msg = {
+			subject: 'this is a test TEXT message from emailjs',
+			from: 'zelda@gmail.com',
+			to: 'gannon@gmail.com',
+			text: null,
+			'message-id': 'this is a special id',
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.text, '\n\n\n');
-});
+		const mail = await send(msg);
+		assertEquals(mail.text, '\n\n\n');
+	});
 
-Deno.test('empty text message', () => {
-	const msg = {
-		subject: 'this is a test TEXT message from emailjs',
-		from: 'zelda@gmail.com',
-		to: 'gannon@gmail.com',
-		text: '',
-		'message-id': 'this is a special id',
-	};
+	it('empty text message', async () => {
+		const msg = {
+			subject: 'this is a test TEXT message from emailjs',
+			from: 'zelda@gmail.com',
+			to: 'gannon@gmail.com',
+			text: '',
+			'message-id': 'this is a special id',
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.text, '\n\n\n');
-});
+		const mail = await send(msg);
+		assertEquals(mail.text, '\n\n\n');
+	});
 
-Deno.test('simple unicode text message', () => {
-	const msg = {
-		subject: 'this ✓ is a test ✓ TEXT message from emailjs',
-		from: 'zelda✓ <zelda@gmail.com>',
-		to: 'gannon✓ <gannon@gmail.com>',
-		text: 'hello ✓ friend, i hope this message finds you well.',
-	};
+	it('simple unicode text message', async () => {
+		const msg = {
+			subject: 'this ✓ is a test ✓ TEXT message from emailjs',
+			from: 'zelda✓ <zelda@gmail.com>',
+			to: 'gannon✓ <gannon@gmail.com>',
+			text: 'hello ✓ friend, i hope this message finds you well.',
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.text, msg.text + '\n\n\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
+		const mail = await send(msg);
+		assertEquals(mail.text, msg.text + '\n\n\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-Deno.test('very large text message', () => {
-	// thanks to jart+loberstech for this one!
-	const msg = {
-		subject: 'this is a test TEXT message from emailjs',
-		from: 'ninjas@gmail.com',
-		to: 'pirates@gmail.com',
-		text: textFixture,
-	};
+	it('very large text message', async () => {
+		// thanks to jart+loberstech for this one!
+		const msg = {
+			subject: 'this is a test TEXT message from emailjs',
+			from: 'ninjas@gmail.com',
+			to: 'pirates@gmail.com',
+			text: textFixture,
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.text, msg.text.replace(/\r/g, '') + '\n\n\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
+		const mail = await send(msg);
+		assertEquals(mail.text, msg.text.replace(/\r/g, '') + '\n\n\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-Deno.test('very large text data message', () => {
-	const text = '<html><body><pre>' + textFixture + '</pre></body></html>';
+	it('very large text data message', async () => {
+		const text = '<html><body><pre>' + textFixture + '</pre></body></html>';
 
-	const msg = {
-		subject: 'this is a test TEXT+DATA message from emailjs',
-		from: 'lobsters@gmail.com',
-		to: 'lizards@gmail.com',
-		text: 'hello friend if you are seeing this, you can not view html emails. it is attached inline.',
-		attachment: {
-			data: text,
-			alternative: true,
-		},
-	};
+		const msg = {
+			subject: 'this is a test TEXT+DATA message from emailjs',
+			from: 'lobsters@gmail.com',
+			to: 'lizards@gmail.com',
+			text: 'hello friend if you are seeing this, you can not view html emails. it is attached inline.',
+			attachment: {
+				data: text,
+				alternative: true,
+			},
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.html, text.replace(/\r/g, ''));
-	assertEquals(mail.text, msg.text + '\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
+		const mail = await send(msg);
+		assertEquals(mail.html, text.replace(/\r/g, ''));
+		assertEquals(mail.text, msg.text + '\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-Deno.test('html data message', () => {
-	const msg = {
-		subject: 'this is a test TEXT+HTML+DATA message from emailjs',
-		from: 'obama@gmail.com',
-		to: 'mitt@gmail.com',
-		attachment: {
-			data: htmlFixture,
-			alternative: true,
-		},
-	};
+	it('html data message', async () => {
+		const msg = {
+			subject: 'this is a test TEXT+HTML+DATA message from emailjs',
+			from: 'obama@gmail.com',
+			to: 'mitt@gmail.com',
+			attachment: {
+				data: htmlFixture,
+				alternative: true,
+			},
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.html, htmlFixture.replace(/\r/g, ''));
-	assertEquals(mail.text, '\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
+		const mail = await send(msg);
+		assertEquals(mail.html, htmlFixture.replace(/\r/g, ''));
+		assertEquals(mail.text, '\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-Deno.test('html file message', () => {
-	const msg = {
-		subject: 'this is a test TEXT+HTML+FILE message from emailjs',
-		from: 'thomas@gmail.com',
-		to: 'nikolas@gmail.com',
-		attachment: {
-			path: new URL('attachments/smtp.html', import.meta.url),
-			alternative: true,
-		},
-	};
-
-	const mail = await send(msg);
-	assertEquals(mail.html, htmlFixture.replace(/\r/g, ''));
-	assertEquals(mail.text, '\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
-
-Deno.test('html with image embed message', () => {
-	const htmlFixture2Url = new URL('attachments/smtp2.html', import.meta.url);
-	const imageFixtureUrl = new URL('attachments/smtp.gif', import.meta.url);
-	const msg = {
-		subject: 'this is a test TEXT+HTML+IMAGE message from emailjs',
-		from: 'ninja@gmail.com',
-		to: 'pirate@gmail.com',
-		attachment: {
-			path: htmlFixture2Url,
-			alternative: true,
-			related: [
-				{
-					path: imageFixtureUrl,
-					type: 'image/gif',
-					name: 'smtp-diagram.gif',
-					headers: { 'Content-ID': '<smtp-diagram@local>' },
-				},
-			],
-		},
-	};
-
-	const mail = await send(msg);
-	assertEquals(
-		mail.attachments[ 0 ].content.toString('base64'),
-		readFileSync(imageFixtureUrl, 'base64')
-	);
-	assertEquals(mail.html, readFileSync(htmlFixture2Url, 'utf-8').replace(/\r/g, ''));
-	assertEquals(mail.text, '\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
-
-Deno.test('html data and attachment message', () => {
-	const msg = {
-		subject: 'this is a test TEXT+HTML+FILE message from emailjs',
-		from: 'thomas@gmail.com',
-		to: 'nikolas@gmail.com',
-		attachment: [
-			{
+	it('html file message', async () => {
+		const msg = {
+			subject: 'this is a test TEXT+HTML+FILE message from emailjs',
+			from: 'thomas@gmail.com',
+			to: 'nikolas@gmail.com',
+			attachment: {
 				path: new URL('attachments/smtp.html', import.meta.url),
 				alternative: true,
 			},
-			{ path: new URL('attachments/smtp.gif', import.meta.url) },
-		] as MessageAttachment[],
-	};
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.html, htmlFixture.replace(/\r/g, ''));
-	assertEquals(mail.text, '\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
+		const mail = await send(msg);
+		assertEquals(mail.html, htmlFixture.replace(/\r/g, ''));
+		assertEquals(mail.text, '\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-Deno.test('attachment message', () => {
-	const msg = {
-		subject: 'this is a test TEXT+ATTACHMENT message from emailjs',
-		from: 'washing@gmail.com',
-		to: 'lincoln@gmail.com',
-		text: 'hello friend, i hope this message and pdf finds you well.',
-		attachment: {
-			path: pdfFixtureUrl,
-			type: 'application/pdf',
-			name: 'smtp-info.pdf',
-		} as MessageAttachment,
-	};
+	it('html with image embed message', async () => {
+		const htmlFixture2Url = new URL('attachments/smtp2.html', import.meta.url);
+		const imageFixtureUrl = new URL('attachments/smtp.gif', import.meta.url);
+		const msg = {
+			subject: 'this is a test TEXT+HTML+IMAGE message from emailjs',
+			from: 'ninja@gmail.com',
+			to: 'pirate@gmail.com',
+			attachment: {
+				path: htmlFixture2Url,
+				alternative: true,
+				related: [
+					{
+						path: imageFixtureUrl,
+						type: 'image/gif',
+						name: 'smtp-diagram.gif',
+						headers: { 'Content-ID': '<smtp-diagram@local>' },
+					},
+				],
+			},
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.attachments[ 0 ].content.toString('base64'), pdfFixture);
-	assertEquals(mail.text, msg.text + '\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
+		const mail = await send(msg);
+		assertEquals(
+			mail.attachments[ 0 ].content.toString('base64'),
+			readFileSync(imageFixtureUrl, 'base64')
+		);
+		assertEquals(mail.html, readFileSync(htmlFixture2Url, 'utf-8').replace(/\r/g, ''));
+		assertEquals(mail.text, '\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-Deno.test('attachment sent with unicode filename message', () => {
-	const msg = {
-		subject: 'this is a test TEXT+ATTACHMENT message from emailjs',
-		from: 'washing@gmail.com',
-		to: 'lincoln@gmail.com',
-		text: 'hello friend, i hope this message and pdf finds you well.',
-		attachment: {
-			path: pdfFixtureUrl,
-			type: 'application/pdf',
-			name: 'smtp-✓-info.pdf',
-		} as MessageAttachment,
-	};
+	it('html data and attachment message', async () => {
+		const msg = {
+			subject: 'this is a test TEXT+HTML+FILE message from emailjs',
+			from: 'thomas@gmail.com',
+			to: 'nikolas@gmail.com',
+			attachment: [
+				{
+					path: new URL('attachments/smtp.html', import.meta.url),
+					alternative: true,
+				},
+				{ path: new URL('attachments/smtp.gif', import.meta.url) },
+			] as MessageAttachment[],
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.attachments[ 0 ].content.toString('base64'), pdfFixture);
-	assertEquals(mail.attachments[ 0 ].filename, 'smtp-✓-info.pdf');
-	assertEquals(mail.text, msg.text + '\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
+		const mail = await send(msg);
+		assertEquals(mail.html, htmlFixture.replace(/\r/g, ''));
+		assertEquals(mail.text, '\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-Deno.test('attachments message', () => {
-	const msg = {
-		subject: 'this is a test TEXT+2+ATTACHMENTS message from emailjs',
-		from: 'sergey@gmail.com',
-		to: 'jobs@gmail.com',
-		text: 'hello friend, i hope this message and attachments finds you well.',
-		attachment: [
-			{
+	it('attachment message', async () => {
+		const msg = {
+			subject: 'this is a test TEXT+ATTACHMENT message from emailjs',
+			from: 'washing@gmail.com',
+			to: 'lincoln@gmail.com',
+			text: 'hello friend, i hope this message and pdf finds you well.',
+			attachment: {
 				path: pdfFixtureUrl,
 				type: 'application/pdf',
 				name: 'smtp-info.pdf',
-			},
-			{
-				path: tarFixtureUrl,
-				type: 'application/tar-gz',
-				name: 'postfix.source.2.8.7.tar.gz',
-			},
-		] as MessageAttachment[],
-	};
+			} as MessageAttachment,
+		};
 
-	const mail = await send(msg);
-	assertEquals(mail.attachments[ 0 ].content.toString('base64'), pdfFixture);
-	assertEquals(mail.attachments[ 1 ].content.toString('base64'), tarFixture);
-	assertEquals(mail.text, msg.text + '\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
+		const mail = await send(msg);
+		assertEquals(mail.attachments[ 0 ].content.toString('base64'), pdfFixture);
+		assertEquals(mail.text, msg.text + '\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-Deno.test('streams message', () => {
-	const msg = {
-		subject: 'this is a test TEXT+2+STREAMED+ATTACHMENTS message from emailjs',
-		from: 'stanford@gmail.com',
-		to: 'mit@gmail.com',
-		text: 'hello friend, i hope this message and streamed attachments finds you well.',
-		attachment: [
-			{
-				stream: createReadStream(pdfFixtureUrl),
+	it('attachment sent with unicode filename message', async () => {
+		const msg = {
+			subject: 'this is a test TEXT+ATTACHMENT message from emailjs',
+			from: 'washing@gmail.com',
+			to: 'lincoln@gmail.com',
+			text: 'hello friend, i hope this message and pdf finds you well.',
+			attachment: {
+				path: pdfFixtureUrl,
 				type: 'application/pdf',
-				name: 'smtp-info.pdf',
-			},
-			{
-				stream: createReadStream(tarFixtureUrl),
-				type: 'application/x-gzip',
-				name: 'postfix.source.2.8.7.tar.gz',
-			},
-		],
-	};
+				name: 'smtp-✓-info.pdf',
+			} as MessageAttachment,
+		};
 
-	for (const { stream } of msg.attachment) {
-		stream.pause();
-	}
+		const mail = await send(msg);
+		assertEquals(mail.attachments[ 0 ].content.toString('base64'), pdfFixture);
+		assertEquals(mail.attachments[ 0 ].filename, 'smtp-✓-info.pdf');
+		assertEquals(mail.text, msg.text + '\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-	const mail = await send(msg);
-	assertEquals(mail.attachments[ 0 ].content.toString('base64'), pdfFixture);
-	assertEquals(mail.attachments[ 1 ].content.toString('base64'), tarFixture);
-	assertEquals(mail.text, msg.text + '\n');
-	assertEquals(mail.subject, msg.subject);
-	assertEquals(mail.from?.text, msg.from);
-	assertEquals(mail.to?.text, msg.to);
-});
+	it('attachments message', async () => {
+		const msg = {
+			subject: 'this is a test TEXT+2+ATTACHMENTS message from emailjs',
+			from: 'sergey@gmail.com',
+			to: 'jobs@gmail.com',
+			text: 'hello friend, i hope this message and attachments finds you well.',
+			attachment: [
+				{
+					path: pdfFixtureUrl,
+					type: 'application/pdf',
+					name: 'smtp-info.pdf',
+				},
+				{
+					path: tarFixtureUrl,
+					type: 'application/tar-gz',
+					name: 'postfix.source.2.8.7.tar.gz',
+				},
+			] as MessageAttachment[],
+		};
 
-Deno.test('message validation fails without `from` header', () => {
-	const msg = new Message({});
-	const { isValid, validationError } = msg.checkValidity();
-	t.false(isValid);
-	assertEquals(validationError, 'Message must have a `from` header');
-});
+		const mail = await send(msg);
+		assertEquals(mail.attachments[ 0 ].content.toString('base64'), pdfFixture);
+		assertEquals(mail.attachments[ 1 ].content.toString('base64'), tarFixture);
+		assertEquals(mail.text, msg.text + '\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-Deno.test('message validation fails without `to`, `cc`, or `bcc` header', () => {
-	const { isValid, validationError } = new Message({
-		from: 'piglet@gmail.com',
-	}).checkValidity();
+	it('streams message', async () => {
+		const msg = {
+			subject: 'this is a test TEXT+2+STREAMED+ATTACHMENTS message from emailjs',
+			from: 'stanford@gmail.com',
+			to: 'mit@gmail.com',
+			text: 'hello friend, i hope this message and streamed attachments finds you well.',
+			attachment: [
+				{
+					stream: createReadStream(pdfFixtureUrl),
+					type: 'application/pdf',
+					name: 'smtp-info.pdf',
+				},
+				{
+					stream: createReadStream(tarFixtureUrl),
+					type: 'application/x-gzip',
+					name: 'postfix.source.2.8.7.tar.gz',
+				},
+			],
+		};
 
-	t.false(isValid);
-	assertEquals(
-		validationError,
-		'Message must have at least one `to`, `cc`, or `bcc` header'
-	);
-});
+		for (const { stream } of msg.attachment) {
+			stream.pause();
+		}
 
-Deno.test('message validation succeeds with only `to` recipient header (string)', () => {
-	const { isValid, validationError } = new Message({
-		from: 'piglet@gmail.com',
-		to: 'pooh@gmail.com',
-	}).checkValidity();
+		const mail = await send(msg);
+		assertEquals(mail.attachments[ 0 ].content.toString('base64'), pdfFixture);
+		assertEquals(mail.attachments[ 1 ].content.toString('base64'), tarFixture);
+		assertEquals(mail.text, msg.text + '\n');
+		assertEquals(mail.subject, msg.subject);
+		assertEquals(mail.from?.text, msg.from);
+		assertEquals(mail.to?.text, msg.to);
+	});
 
-	t.true(isValid);
-	assertEquals(validationError, undefined);
-});
+	it('message validation fails without `from` header', () => {
+		const msg = new Message({});
+		const { isValid, validationError } = msg.checkValidity();
+		assertFalse(isValid);
+		assertEquals(validationError, 'Message must have a `from` header');
+	});
 
-Deno.test('message validation succeeds with only `to` recipient header (array)', () => {
-	const { isValid, validationError } = new Message({
-		from: 'piglet@gmail.com',
-		to: [ 'pooh@gmail.com' ],
-	}).checkValidity();
+	it('message validation fails without `to`, `cc`, or `bcc` header', () => {
+		const { isValid, validationError } = new Message({
+			from: 'piglet@gmail.com',
+		}).checkValidity();
 
-	t.true(isValid);
-	assertEquals(validationError, undefined);
-});
+		assertFalse(isValid);
+		assertEquals(
+			validationError,
+			'Message must have at least one `to`, `cc`, or `bcc` header'
+		);
+	});
 
-Deno.test('message validation succeeds with only `cc` recipient header (string)', () => {
-	const { isValid, validationError } = new Message({
-		from: 'piglet@gmail.com',
-		cc: 'pooh@gmail.com',
-	}).checkValidity();
+	it('message validation succeeds with only `to` recipient header (string)', () => {
+		const { isValid, validationError } = new Message({
+			from: 'piglet@gmail.com',
+			to: 'pooh@gmail.com',
+		}).checkValidity();
 
-	t.true(isValid);
-	assertEquals(validationError, undefined);
-});
+		assert(isValid);
+		assertEquals(validationError, undefined);
+	});
 
-Deno.test('message validation succeeds with only `cc` recipient header (array)', () => {
-	const { isValid, validationError } = new Message({
-		from: 'piglet@gmail.com',
-		cc: [ 'pooh@gmail.com' ],
-	}).checkValidity();
+	it('message validation succeeds with only `to` recipient header (array)', () => {
+		const { isValid, validationError } = new Message({
+			from: 'piglet@gmail.com',
+			to: [ 'pooh@gmail.com' ],
+		}).checkValidity();
 
-	t.true(isValid);
-	assertEquals(validationError, undefined);
-});
+		assert(isValid);
+		assertEquals(validationError, undefined);
+	});
 
-Deno.test('message validation succeeds with only `bcc` recipient header (string)', () => {
-	const { isValid, validationError } = new Message({
-		from: 'piglet@gmail.com',
-		bcc: 'pooh@gmail.com',
-	}).checkValidity();
+	it('message validation succeeds with only `cc` recipient header (string)', () => {
+		const { isValid, validationError } = new Message({
+			from: 'piglet@gmail.com',
+			cc: 'pooh@gmail.com',
+		}).checkValidity();
 
-	t.true(isValid);
-	assertEquals(validationError, undefined);
-});
+		assert(isValid);
+		assertEquals(validationError, undefined);
+	});
 
-Deno.test('message validation succeeds with only `bcc` recipient header (array)', () => {
-	const { isValid, validationError } = new Message({
-		from: 'piglet@gmail.com',
-		bcc: [ 'pooh@gmail.com' ],
-	}).checkValidity();
+	it('message validation succeeds with only `cc` recipient header (array)', () => {
+		const { isValid, validationError } = new Message({
+			from: 'piglet@gmail.com',
+			cc: [ 'pooh@gmail.com' ],
+		}).checkValidity();
 
-	t.true(isValid);
-	assertEquals(validationError, undefined);
+		assert(isValid);
+		assertEquals(validationError, undefined);
+	});
+
+	it('message validation succeeds with only `bcc` recipient header (string)', () => {
+		const { isValid, validationError } = new Message({
+			from: 'piglet@gmail.com',
+			bcc: 'pooh@gmail.com',
+		}).checkValidity();
+
+		assert(isValid);
+		assertEquals(validationError, undefined);
+	});
+
+	it('message validation succeeds with only `bcc` recipient header (array)', () => {
+		const { isValid, validationError } = new Message({
+			from: 'piglet@gmail.com',
+			bcc: [ 'pooh@gmail.com' ],
+		}).checkValidity();
+
+		assert(isValid);
+		assertEquals(validationError, undefined);
+	});
 });

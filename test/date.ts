@@ -1,14 +1,15 @@
+import { assert, assertEquals } from "https://deno.land/std@0.182.0/testing/asserts.ts";
 import { getRFC2822Date, getRFC2822DateUTC, isRFC2822Date } from '../mod.ts';
 
 const toD_utc = (dt: number) => getRFC2822DateUTC(new Date(dt));
 const toD = (dt: number, utc = false) => getRFC2822Date(new Date(dt), utc);
 
 Deno.test('rfc2822 non-UTC', () => {
-	t.true(isRFC2822Date(toD(0)));
-	t.true(isRFC2822Date(toD(329629726785)));
-	t.true(isRFC2822Date(toD(729629726785)));
-	t.true(isRFC2822Date(toD(1129629726785)));
-	t.true(isRFC2822Date(toD(1529629726785)));
+	assert(isRFC2822Date(toD(0)));
+	assert(isRFC2822Date(toD(329629726785)));
+	assert(isRFC2822Date(toD(729629726785)));
+	assert(isRFC2822Date(toD(1129629726785)));
+	assert(isRFC2822Date(toD(1529629726785)));
 });
 
 Deno.test('rfc2822 UTC', () => {
