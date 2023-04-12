@@ -1,15 +1,13 @@
-import type { PathLike } from 'node:fs';
 import {
 	existsSync,
 	open as openFile,
 	close as closeFile,
 	closeSync as closeFileSync,
 	read as readFile,
-} from 'node:fs';
-import { hostname } from 'node:os';
-import { Stream } from 'node:stream';
-import { Buffer } from "node:buffer";
-import type { Readable } from 'node:stream';
+} from 'https://deno.land/std@0.177.0/node/fs.ts';
+import { Stream } from 'https://deno.land/std@0.177.0/node/stream.ts';
+import type { Readable } from 'https://deno.land/std@0.177.0/node/stream.ts';
+import { Buffer } from 'https://deno.land/std@0.177.0/node/buffer.ts';
 
 import { addressparser } from './address.ts';
 import { getRFC2822Date } from './date.ts';
@@ -35,7 +33,7 @@ export const BUFFERSIZE = (MIMECHUNK * 24 * 7) as 12768;
 export interface MessageAttachmentHeaders {
 	[ index: string ]: string | undefined;
 	'content-type'?: string;
-	'content-transfer-encoding'?: Parameters<Buffer[ "fill" ]>[ 3 ] | '7bit' | '8bit';
+	'content-transfer-encoding'?: '7bit' | '8bit';
 	'content-disposition'?: string;
 }
 
@@ -47,7 +45,7 @@ export interface MessageAttachment {
 	| MessageAttachment[]
 	| MessageAttachmentHeaders
 	| Readable
-	| PathLike
+	| URL
 	| undefined;
 	name?: string;
 	headers?: MessageAttachmentHeaders;
@@ -57,7 +55,7 @@ export interface MessageAttachment {
 	data?: string;
 	encoded?: boolean;
 	stream?: Readable;
-	path?: PathLike;
+	path?: URL;
 	type?: string;
 	charset?: string;
 	method?: string;
@@ -119,7 +117,7 @@ export class Message {
 	public readonly attachments: MessageAttachment[] = [];
 	public readonly header: Partial<MessageHeaders> = {
 		'message-id': `<${new Date().getTime()}.${counter++}.${Deno.pid
-			}@${hostname()}>`,
+			}@${Deno.hostname()}>`,
 		date: getRFC2822Date(),
 	};
 	public readonly content: string = 'text/plain; charset=utf-8';
@@ -441,7 +439,7 @@ class MessageStream extends Stream {
 				}
 				const readBytes = (
 					err: NodeJS.ErrnoException | null,
-					bytes: number
+					bytes: number | null
 				) => {
 					if (err || this.readable === false) {
 						this.emit(
@@ -451,7 +449,7 @@ class MessageStream extends Stream {
 						return;
 					}
 					// guaranteed to be encoded without padding unless it is our last read
-					outputBase64(buffer.toString(encoding, 0, bytes), () => {
+					outputBase64(buffer.toString(encoding, 0, bytes!), () => {
 						if (bytes == chunk) {
 							// we read a full chunk, there might be more
 							readFile(fd, buffer, 0, chunk, null, readBytes);
@@ -466,7 +464,7 @@ class MessageStream extends Stream {
 				this.once('error', closeFileSync);
 			};
 
-			openFile(attachment.path as PathLike, 'r', opened);
+			openFile(attachment.path!, 'r', opened);
 		};
 
 		/**

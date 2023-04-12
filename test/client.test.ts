@@ -1,4 +1,4 @@
-import { promisify } from 'node:util';
+import { promisify } from 'https://deno.land/std@0.177.0/node/util.ts';
 
 // @deno-types="npm:@types/mailparser"
 import { simpleParser, ParsedMail, AddressObject } from 'npm:mailparser';

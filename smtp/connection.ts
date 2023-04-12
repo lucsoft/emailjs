@@ -1,14 +1,11 @@
-import { createHmac } from 'node:crypto';
-import { EventEmitter } from 'node:events';
-import { Socket } from 'node:net';
-import { Buffer } from 'node:buffer';
-import { hostname } from 'node:os';
-import { connect, createSecureContext, TLSSocket } from 'node:tls';
-import type { ConnectionOptions } from 'node:tls';
-
+import { createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts';
+import { Socket } from 'https://deno.land/std@0.177.0/node/net.ts';
+import { Buffer } from 'https://deno.land/std@0.177.0/node/buffer.ts';
+import { connect, createSecureContext } from 'https://deno.land/std@0.177.0/node/tls.ts';
 import { SMTPError, SMTPErrorStates } from './error.ts';
 import { SMTPResponseMonitor } from './response.ts';
-
+import EventEmitter from 'https://deno.land/std@0.177.0/node/_events.mjs';
+import { TLSSocket } from "https://deno.land/std@0.177.0/node/_tls_wrap.ts";
 /**
  * @readonly
  * @enum
@@ -46,15 +43,7 @@ let DEBUG: 0 | 1 = 0;
  */
 const log = (...args: any[]) => {
 	if (DEBUG === 1) {
-		args.forEach((d) =>
-			console.log(
-				typeof d === 'object'
-					? d instanceof Error
-						? d.message
-						: JSON.stringify(d)
-					: d
-			)
-		);
+		console.log(args.map(x => Deno.inspect(x)));
 	}
 };
 
@@ -70,7 +59,7 @@ const caller = (callback?: (...rest: any[]) => void, ...args: any[]) => {
 };
 
 export type SMTPSocketOptions = Omit<
-	ConnectionOptions,
+	any,
 	'port' | 'host' | 'path' | 'socket' | 'timeout' | 'secureContext'
 >;
 
@@ -108,10 +97,10 @@ export class SMTPConnection extends EventEmitter {
 	protected _secure = false;
 	protected loggedin = false;
 
-	protected sock: Socket | TLSSocket | null = null;
+	protected sock: TLSSocket | Socket | null = null;
 	protected features: { [ index: string ]: string | boolean; } | null = null;
 	protected monitor: SMTPResponseMonitor | null = null;
-	protected domain = hostname();
+	protected domain = Deno.hostname();
 	protected host = 'localhost';
 	protected ssl: boolean | SMTPSocketOptions = false;
 	protected tls: boolean | SMTPSocketOptions = false;
@@ -330,8 +319,10 @@ export class SMTPConnection extends EventEmitter {
 				connected
 			);
 		} else {
-			this.sock = new Socket();
-			this.sock.connect(this.port, this.host.trim(), connectedErrBack);
+			this.sock = new Socket({
+			});
+			this.sock.on("error", connectedErrBack);
+			this.sock.connect(this.port, this.host.trim());
 		}
 
 		this.monitor = new SMTPResponseMonitor(this.sock, this.timeout, () =>

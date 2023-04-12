@@ -1,7 +1,8 @@
 import { SMTPError, SMTPErrorStates } from './error.ts';
-import type { Socket } from 'node:net';
-import type { TLSSocket } from 'node:tls';
-import { Buffer } from "node:buffer";
+import { Socket } from 'https://deno.land/std@0.177.0/node/net.ts';
+import { TLSSocket } from "https://deno.land/std@0.177.0/node/_tls_wrap.ts";
+import { Buffer } from 'https://deno.land/std@0.177.0/node/buffer.ts';
+
 
 export class SMTPResponseMonitor {
 	public readonly stop: (err?: Error) => void;

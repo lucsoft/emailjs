@@ -1,4 +1,4 @@
-import { createReadStream, readFileSync } from 'node:fs';
+import { createReadStream, readFileSync } from 'https://deno.land/std@0.177.0/node/fs.ts';
 
 // @deno-types="npm:@types/mailparser"
 import { simpleParser, ParsedMail, AddressObject } from 'npm:mailparser';
